@@ -123,7 +123,7 @@ After this build you have a running version of this minikube vagrant box. The bu
 
 ## Package
 
-> **:information_source:  INFO: The package make target takes a long time roughly 20 minutes to finish.**
+> **:information_source:&nbsp; INFO: The package make target takes a long time roughly 20 minutes to finish.**
 >
 > It's builds the vagrant box from scratch and performs couple of cleanup task to shrink the final base box size by running the compress make target.
 
@@ -135,7 +135,7 @@ This run the make build target to build a fresh vagrant machine and export the v
 
 ## Publish
 
-> **:information_source:  INFO: The publish make target needs an authenticated connection to the Vagrant Cloud to upload the vagrant box properly.**
+> **:information_source:&nbsp; INFO: The publish make target needs an authenticated connection to the Vagrant Cloud to upload the vagrant box properly.**
 >
 > The default picked Vagrant Cloud registry is fr123k this can be configured check the Makefile. If you want to upload this or a customized version to your own Vagrant Cloud account.
 
