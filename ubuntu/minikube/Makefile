@@ -16,11 +16,17 @@ shell:
 package: build compress
 	vagrant package --output ${BOX_FILE}
 
+# Remove all docker images/containers/volumes created from minikube to save disk space
 compress-minikube:
 	# remove all the extracted minikube containers
+	vagrant ssh -c "docker system df"
+	vagrant ssh -c "docker builder -f prune"
 	vagrant ssh -c "docker system prune -a -f"
-	vagrant ssh -c "sleep 30 && docker image prune --all -f"
-	vagrant ssh -c "sleep 30 && docker volume rm `docker volume ls -qf dangling=true` || true"
+	vagrant ssh -c "docker image prune --all -f"
+	vagrant ssh -c "docker volume rm \$(docker volume ls -qf dangling=true) || true"
+	# download the kicbase docker image for minikube
+	# it contains the whole k8s control plane images
+	vagrant ssh -c "docker system df"
 	vagrant ssh -c "docker pull gcr.io/k8s-minikube/kicbase:v0.0.20"
 
 # Remove everything that is not needed to srink the vagrant base box size
