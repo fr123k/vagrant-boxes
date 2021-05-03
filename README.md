@@ -1,4 +1,5 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Vagrant Box: minikube](https://img.shields.io/badge/Vagrant%20Box-minikube-blue.svg)](https://app.vagrantup.com/fr123k/boxes/ubuntu21-minikube)
 
 # vagrant-boxes
 
