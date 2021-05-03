@@ -1,7 +1,12 @@
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 # vagrant-boxes
 
 This repository define different Vagrantfile that are also available as base boxes from the Vagrant cloud registry.
-[fr123k](https://app.vagrantup.com/fr123k)
+
+# Vagrant Cloud (app.vagrantup.com)
+
+[Vagrant Boxes](https://app.vagrantup.com/fr123k)
 
 # Boxes
 
