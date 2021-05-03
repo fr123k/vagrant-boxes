@@ -19,4 +19,4 @@ The following boxes are based on the following ubuntu base box. `ubuntu/hirsute6
 
 ### Minikube
 
-[minikube](./ubuntu/minikube/README.md)
+README: [minikube](./ubuntu/minikube/README.md)
