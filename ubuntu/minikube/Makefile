@@ -36,10 +36,12 @@ compress: compress-minikube
 	vagrant ssh -c "sudo apt-get -y autoclean"
 	vagrant ssh -c "sudo apt-get -y clean"
 	vagrant ssh -c "sudo apt-get -y autoremove"
+	vagrant ssh -c "df -h"
 	# for easier virtual machine image comnpression just fill in the empty disk space with zero bits
 	vagrant ssh -c "dd if=/dev/zero of=/tmp/EMPTY bs=1M; rm -f /tmp/EMPTY"
 
-publish: #clean package
+# Upload vagrant box to Vagrant Cloud (need )
+publish: clean package
 	vagrant cloud auth login
 	vagrant cloud publish -f ${VAGRANT_REGISTRY} ${VERSION} ${PROVIDER} ${BOX_FILE}
 
