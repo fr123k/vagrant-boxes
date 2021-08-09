@@ -1,7 +1,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Vagrant Box: minikube](https://img.shields.io/badge/Vagrant%20Box-minikube-blue.svg)](https://app.vagrantup.com/fr123k/boxes/ubuntu21-minikube)
 [![Vagrant Box: rust](https://img.shields.io/badge/Vagrant%20Box-rust-blue.svg)](https://app.vagrantup.com/fr123k/boxes/ubuntu21-rust)
-[![Vagrant Box: pulumi](https://img.shields.io/badge/Vagrant%20Box-rust-blue.svg)](https://app.vagrantup.com/fr123k/boxes/ubuntu21-pulumi)
+[![Vagrant Box: pulumi](https://img.shields.io/badge/Vagrant%20Box-pulumi-blue.svg)](https://app.vagrantup.com/fr123k/boxes/ubuntu21-pulumi)
 # vagrant-boxes
 
 This repository define different Vagrantfile that are also available as base boxes from the Vagrant cloud registry.
