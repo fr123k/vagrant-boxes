@@ -1,0 +1,73 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+required_plugins = %w(vagrant-vbguest)
+
+required_plugins.each do |plugin|
+  need_restart = false
+  unless Vagrant.has_plugin? plugin
+    system "vagrant plugin install #{plugin}"
+    need_restart = true
+  end
+  exec "vagrant #{ARGV.join(' ')}" if need_restart
+end
+
+Vagrant.configure("2") do |config|
+
+  config.vm.box = "ubuntu/hirsute64"
+  config.vm.define "ubuntu-pulumi"
+
+
+  # config.vm.network "private_network", ip: EXTERNAL_IP
+
+  config.vm.provider "virtualbox" do |vb|
+    # Customize the amount of memory on the VM:
+    vb.memory = "4096"
+    vb.cpus = 2
+  end
+
+  config.vm.provision "shell", privileged: false, reset: true, inline: <<-SHELL
+    #!/bin/bash
+
+    # Update apt and get dependencies
+    sudo apt-get -y update
+    sudo apt-get -y upgrade
+    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y zip unzip curl wget git conntrack
+    
+    # Install docker (needed for minikube vm-driver none)
+    sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg 2>/dev/null | sudo apt-key add -
+    sudo add-apt-repository -y "deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable"
+    sudo apt-get update
+    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y docker-ce
+    # Add vagrant user to the docker group 
+    sudo usermod -aG docker vagrant
+  SHELL
+  
+  config.vm.provision "shell", privileged: false, inline: <<-SHELL
+    #!/bin/bash
+    groups vagrant
+    echo "check if the vagrant user can access docker"
+    docker ps
+
+    # Install helm
+    echo "Installing Pulumi"
+    sudo curl -q -fsSL https://get.pulumi.com/ | sh
+
+    echo "Installing Wireguard"
+    sudo apt-get install -y wireguard wireguard-tools
+    sudo modprobe wireguard
+
+    echo "Installing Golang"
+    wget -c https://dl.google.com/go/go1.16.7.linux-amd64.tar.gz -O - | sudo tar -xz -C /usr/local
+
+    printf "export PATH=$PATH:$HOME/.pulumi/bin:/usr/local/go/bin \n" > /home/vagrant/.bashrc
+    printf "echo 'This box definition is part of the following github repository. \nhttps://github.com/fr123k/vagrant-boxes'\n" >> /home/vagrant/.bashrc
+
+    source /home/vagrant/.bashrc
+    go version
+    pulumi version
+
+    # Enforce sysctl
+    sudo sysctl -w vm.max_map_count=262144
+    sudo echo "vm.max_map_count=262144" | sudo tee -a /etc/sysctl.d/90-vm_max_map_count.conf
+  SHELL
+end
