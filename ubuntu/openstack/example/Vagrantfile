@@ -1,0 +1,30 @@
+Vagrant.configure("2") do |config|
+    config.vm.box = "fr123k/ubuntu21-openstack"
+    config.vm.network "forwarded_port", guest: 80, host: 8081
+    config.vm.network "private_network", ip: "172.28.128.16"
+    config.vm.disk :disk, name: "cinder-volume", size: "10GB"
+    config.ssh.extra_args = ["-t", "cd /vagrant; bash --login"]
+
+    config.vm.provider "virtualbox" do |vb|
+        # Customize the amount of memory on the VM:
+        vb.memory = "8192"
+        vb.cpus = 2
+    end
+
+    config.vm.provision "shell", privileged: true, reset: true, inline: <<-SHELL
+        #!/bin/bash
+
+        # wget -q http://cloud-images.ubuntu.com/focal/current/focal-server-cloudimg-amd64.img
+        # cp /vagrant/focal-server-cloudimg-amd64.img ./
+        # cp /vagrant/clouds.yaml ./
+        export OS_CLOUD=openstack
+        openstack image create --container-format bare --disk-format qcow2 --file focal-server-cloudimg-amd64.img Ubuntu-20.04
+        nova-manage cell_v2 discover_hosts --verbose
+        nova-manage cell_v2 list_hosts
+
+        pvcreate /dev/sdc
+        vgcreate stack-volumes-lvmdriver-1 /dev/sdc
+        systemctl restart devstack@c-vol.service
+        journalctl -u devstack@c-vol.service
+    SHELL
+end

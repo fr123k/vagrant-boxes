@@ -1,0 +1,10 @@
+--- neutron	2021-09-10 14:27:34.514243657 +0000
++++ neutron_fix	2021-09-10 15:52:48.000998962 +0000
+@@ -158,6 +158,7 @@
+ # configure_root_helper_options() - Configure agent rootwrap helper options
+ function configure_root_helper_options {
+     local conffile=$1
++    iniset $conffile agent use_helper_for_ns_read "false"
+     iniset $conffile agent root_helper "sudo $NEUTRON_ROOTWRAP_CMD"
+     iniset $conffile agent root_helper_daemon "sudo $NEUTRON_ROOTWRAP_DAEMON_CMD"
+ }

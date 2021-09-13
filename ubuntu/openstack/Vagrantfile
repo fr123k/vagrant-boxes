@@ -1,0 +1,186 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+required_plugins = %w(vagrant-vbguest vagrant-cachier)
+
+required_plugins.each do |plugin|
+  need_restart = false
+  unless Vagrant.has_plugin? plugin
+    system "vagrant plugin install #{plugin}"
+    need_restart = true
+  end
+  exec "vagrant #{ARGV.join(' ')}" if need_restart
+end
+
+Vagrant.configure("2") do |config|
+
+  config.vm.box = "ubuntu/hirsute64"
+  config.vm.define "ubuntu-openstack"
+
+  # vagrant-cachier caches apt/yum etc to speed subsequent
+  # vagrant up
+  # to enable, run
+  # vagrant plugin install vagrant-cachier
+  #
+  if Vagrant.has_plugin?("vagrant-cachier")
+    config.cache.scope = :box
+    config.cache.enable :apt
+    config.cache.enable :pip
+  end
+
+  # config.vm.network "forwarded_port", guest: 80, host: 8081
+  config.vm.network "private_network", ip: "172.28.128.16"
+
+  config.vm.provider "virtualbox" do |vb|
+    # Customize the amount of memory on the VM:
+    vb.memory = "8192"
+    vb.cpus = 2
+  end
+  # virtualbox configuration tweaks
+  config.vm.provision "shell", privileged: false, inline: <<-SHELL
+    sudo sysctl -w vm.max_map_count=262144
+    sudo echo "vm.max_map_count=262144" | sudo tee -a /etc/sysctl.d/90-vm_max_map_count.conf
+    sudo cat /etc/multipath.conf
+    sudo printf "blacklist {\n\tdevnode \"^sd[a-z]\"\n}" >> /etc/multipath.conf
+    sudo cat /etc/multipath.conf
+    sudo systemctl restart multipathd.service
+  SHELL
+
+  config.vm.provision "shell", privileged: false, reset: true, inline: <<-SHELL
+    #!/bin/bash
+
+    # Update apt and get dependencies
+    sudo apt-get -y update
+    sudo apt-get -y upgrade
+    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y wget curl git
+
+    # Install Openstack devstack
+    sudo useradd -s /bin/bash -d /opt/stack -m stack
+    echo "stack ALL=(ALL) NOPASSWD: ALL" | sudo tee /etc/sudoers.d/stack
+  SHELL
+  
+  config.vm.provision "shell", privileged: false, reset: true, inline: <<-SHELL
+    #!/bin/bash
+
+    ADMIN_PASSWORD=secret
+    HOST_IP=172.28.128.16
+
+    # Need uninstall this packages otherwise devstack stack.sh script will fail with unablbe to uninstall this incompatible versions of this packages
+    sudo apt-get purge -y python3-simplejson *pyasn1*
+
+    sudo -u stack -i <<SEOF
+pwd
+rm -rf devstack
+git clone https://opendev.org/openstack/devstack
+cd devstack
+cp /vagrant/patch_neutron_metadata_fix.txt ./lib
+cd lib
+patch < patch_neutron_metadata_fix.txt
+cd ..
+cat > local.conf <<- EOF
+[[local|localrc]]
+ADMIN_PASSWORD=$ADMIN_PASSWORD
+DATABASE_PASSWORD=$ADMIN_PASSWORD
+RABBIT_PASSWORD=$ADMIN_PASSWORD
+SERVICE_PASSWORD=$ADMIN_PASSWORD
+# OVN
+#OVN_BUILD_MODULES=True
+#OVN_BUILD_FROM_SOURCE=True
+HOST_IP=$HOST_IP
+SERVICE_HOST=$HOST_IP
+# Enable Swift
+#enable_service s-proxy s-object s-container s-account
+#SWIFT_HASH=66a3d6b56c1f479c8b4e70ab5c2000f5
+#SWIFT_REPLICAS=1
+# Network Setup
+FLOATING_RANGE=172.28.128.224/27
+FLAT_INTERFACE=enp0s8
+EOF
+cat local.conf
+mkdir -p /opt/stack/data
+set +e
+# This can fail so ignore error and rerun it in the shell provisioner below
+FORCE=yes ./stack.sh || true
+echo "Frank Ittermann Return Code: $?"
+set -e
+SEOF
+  SHELL
+  config.vm.provision "shell", privileged: false, inline: <<-SHELL
+    ADMIN_PASSWORD=secret
+    HOST_IP=172.28.128.16
+
+    sudo apt-get install python3-oslo.privsep
+    sudo -u stack -i <<SEOF
+pwd
+function configure_root_helper_options {
+    local conffile=$1
+    echo "Frank Ittermann overwrote this"
+    iniset $conffile agent use_helper_for_ns_read "false"
+    iniset $conffile agent root_helper "sudo $NEUTRON_ROOTWRAP_CMD"
+    iniset $conffile agent root_helper_daemon "sudo $NEUTRON_ROOTWRAP_DAEMON_CMD"
+}
+export -f configure_root_helper_options
+cd devstack
+cat local.conf
+echo "Retry devstack frank"
+# sudo sed -i 's/^#use_helper_for_ns_read = True/use_helper_for_ns_read = false/' /etc/neutron/neutron.conf
+sudo rm -f /var/run/ovn/openvswitch
+sudo systemctl stop system-devstack.slice
+sudo systemctl stop ovn-ovsdb-server-sb.service
+sudo chown -R stack:stack /opt/stack/
+set +e
+FORCE=yes ./stack.sh
+set -e
+
+systemctl status system-devstack.slice
+
+cd /opt/stack/horizon/
+python3 manage.py compilemessages
+printf 'yes' | python3 manage.py collectstatic
+python3 manage.py compress
+sudo adduser www-data stack
+sudo systemctl restart apache2
+nova-manage cell_v2 discover_hosts --verbose
+nova-manage cell_v2 list_hosts
+
+# Install openstack python cli
+pip install python-openstackclient
+
+cd /tmp
+wget -q http://cloud-images.ubuntu.com/focal/current/focal-server-cloudimg-amd64.img
+cp /vagrant/clouds.yaml ./
+export OS_CLOUD=openstack
+openstack image create --container-format bare --disk-format qcow2 --file focal-server-cloudimg-amd64.img Ubuntu-20.04
+SEOF
+  SHELL
+
+  config.vm.provision "shell", privileged: false, inline: <<-SHELL
+    ADMIN_PASSWORD=secret
+    HOST_IP=172.28.128.16
+
+    sudo -u stack -i <<SEOF
+pwd
+cd devstack
+cat local.conf
+systemctl status system-devstack.slice
+
+cd /opt/stack/horizon/
+python3 manage.py compilemessages
+printf 'yes' | python3 manage.py collectstatic
+python3 manage.py compress
+sudo adduser www-data stack
+sudo systemctl restart apache2
+nova-manage cell_v2 discover_hosts --verbose
+nova-manage cell_v2 list_hosts
+
+# Install openstack python cli
+pip install python-openstackclient
+
+cd /tmp
+wget -q http://cloud-images.ubuntu.com/focal/current/focal-server-cloudimg-amd64.img
+cp /vagrant/clouds.yaml ./
+export OS_CLOUD=openstack
+cat clouds.yaml
+openstack image create --container-format bare --disk-format qcow2 --file focal-server-cloudimg-amd64.img Ubuntu-20.04
+SEOF
+  SHELL
+end
