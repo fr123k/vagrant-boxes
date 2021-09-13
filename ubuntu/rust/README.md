@@ -35,7 +35,7 @@ If you want to start your session in the `/vagrant` folder then use the followin
   Vagrant.configure("2") do |config|
     config.vm.box = "fr123k/ubuntu21-rust"
     config.vm.box_version = "1.0.0"
-    config.ssh.extra_args = ["-t", "cd /vagrant; mkdir -p /tmp/vagrant/target; ln -s /tmp/vagrant/target/ ./target; bash --login"]
+    config.ssh.extra_args = ["-t", "cd /vagrant/; rm -rf ./build; mkdir -p /tmp/vagrant/target; ln -s /tmp/vagrant/target/ ./build; bash --login"]
   end
 ```
 

@@ -31,7 +31,7 @@ Vagrant.configure("2") do |config|
     # Update apt and get dependencies
     sudo apt-get -y update
     sudo apt-get -y upgrade
-    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y zip unzip curl wget git conntrack
+    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y zip unzip curl wget git conntrack gcc
     
     # Install docker (needed for minikube vm-driver none)
     sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg 2>/dev/null | sudo apt-key add -
@@ -69,5 +69,11 @@ Vagrant.configure("2") do |config|
     # Enforce sysctl
     sudo sysctl -w vm.max_map_count=262144
     sudo echo "vm.max_map_count=262144" | sudo tee -a /etc/sysctl.d/90-vm_max_map_count.conf
+  SHELL
+
+  config.vm.provision "shell", privileged: false, inline: <<-SHELL
+    sudo cat /etc/multipath.conf
+    sudo printf "blacklist {\n\tdevnode \"^sd[a-z]\"\n}" >> /etc/multipath.conf
+    sudo cat /etc/multipath.conf
   SHELL
 end
