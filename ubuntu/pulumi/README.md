@@ -21,7 +21,6 @@ The current folder from where the vagrant machine was started is mounted at `/va
 ```
   Vagrant.configure("2") do |config|
     config.vm.box = "fr123k/ubuntu21-pulumi"
-    config.vm.box_version = "1.0.0"
   end
 ```
 
@@ -30,7 +29,6 @@ If you want to start your session in the `/vagrant` folder then use the followin
 ```
   Vagrant.configure("2") do |config|
     config.vm.box = "fr123k/ubuntu21-pulumi"
-    config.vm.box_version = "1.0.0"
     config.ssh.extra_args = ["-t", "cd /vagrant; bash --login"]
   end
 ```

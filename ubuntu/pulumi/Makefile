@@ -1,5 +1,5 @@
 VAGRANT_REGISTRY?=fr123k/ubuntu21-pulumi
-VERSION?=1.0.0
+VERSION?=20210819.0.0
 BOX_FILE?=package.box
 PROVIDER?=virtualbox
 
@@ -20,6 +20,7 @@ package: build compress
 compress:
 	vagrant ssh -c "sudo apt-get purge -y locate"
 	vagrant ssh -c "sudo apt-get purge -y lib*-dev"
+	vagrant ssh -c "sudo apt-get install -y gcc"
 	vagrant ssh -c "sudo apt-get -y autoclean"
 	vagrant ssh -c "sudo apt-get -y clean"
 	vagrant ssh -c "sudo apt-get -y autoremove"
